@@ -57,15 +57,99 @@ Wartością kryterium jest maksymalna z tych wartośći q PI(j)
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <fstream>
 
-class Zadanie{
-    private:
-    int pj;
-    int rj;
-    int qj;
-    explicit Zadanie(int p, int r, int q):pj(p), rj(r), qj(q){}
+int j[5] = {1, 2, 3, 4, 5};
+int p[5] = {2, 5, 1, 1, 2};
+int r[5] = {5, 2, 3, 0, 6};
+int q[5] = {2, 7, 1, 3, 1};
+
+class Zadanie {
+    int j, p, r, q;
+
+public:
+    Zadanie(int j, int p, int r, int q) : j(j), p(p), r(r), q(q) {}
+
+    int GetJ() const { return j; }
+    int GetP() const { return p; }
+    int GetR() const { return r; }
+    int GetQ() const { return q; }
 };
 
-int main(){
-    std::cout<<"Hello"<<std::endl;
+class Problem {
+    std::vector<Zadanie> zadania;
+    std::vector<int> rozwiazanie;
+
+public:
+    void WczytajZPliku(const std::string& nazwaPliku) {
+        std::ifstream plik(nazwaPliku);
+        if (!plik) {
+            std::cerr << "Nie mozna otworzyc pliku!" << std::endl;
+            return;
+        }
+
+        int n;
+        plik >> n; // Wczytaj liczbę zadań
+        zadania.clear();
+
+        for (int i = 0; i < n; i++) {
+            int p, r, q;
+            plik >> p >> r >> q;
+            zadania.emplace_back(i+1, p, r, q);
+        }
+        plik.close();
+    }
+
+    void WyswietlInstancje() {
+        for (const auto& zadanie : zadania) {
+            std::cout << "j: " << zadanie.GetJ()
+                      << " p: " << zadanie.GetP()
+                      << " r: " << zadanie.GetR()
+                      << " q: " << zadanie.GetQ() << std::endl;
+        }
+    }
+
+    int PoliczCmax() {
+
+        int minC = INT_MAX;
+        rozwiazanie = std::vector<int>(zadania.size());
+
+        do {
+            int C = zadania[0].GetR() + zadania[0].GetP();
+            for (size_t i = 1; i < zadania.size(); i++) {
+                C = std::max(C, zadania[i].GetR()) + zadania[i].GetP();
+            }
+            C += zadania.back().GetQ();
+
+            if(minC>C) {
+                minC=C;
+                rozwiazanie.clear();
+                for (auto i : zadania) {
+                    rozwiazanie.push_back(i.GetJ());
+                }
+            }
+
+        } while (std::next_permutation(zadania.begin(), zadania.end(), [](const Zadanie& a, const Zadanie& b) {
+            return a.GetJ() < b.GetJ();
+        }));
+        std::cout << "Minimum Cmax: " << minC << std::endl;
+        std::cout << "Rozwiazanie: ";
+        for (auto i : rozwiazanie) {
+            std::cout << i << " ";
+        }
+        return minC;
+    }
+};
+
+int main() {
+
+    Problem inst;
+
+    inst.WczytajZPliku("../SCHRAGE1.DAT");
+    inst.WyswietlInstancje();
+    inst.PoliczCmax();
+
+    return 0;
 }
+
