@@ -69,12 +69,16 @@ class Zadanie {
     int j, p, r, q;
 
 public:
-    Zadanie(int j, int p, int r, int q) : j(j), p(p), r(r), q(q) {}
+    Zadanie(int j, int r, int p, int q) : j(j), p(p), r(r), q(q) {}
 
     int GetJ() const { return j; }
     int GetP() const { return p; }
     int GetR() const { return r; }
     int GetQ() const { return q; }
+
+    bool operator<(const Zadanie& other) const {
+        return j < other.j;
+    }
 };
 
 class Problem {
@@ -95,8 +99,8 @@ public:
 
         for (int i = 0; i < n; i++) {
             int p, r, q;
-            plik >> p >> r >> q;
-            zadania.emplace_back(i+1, p, r, q);
+            plik >> r >> p >> q;
+            zadania.emplace_back(i+1, r, p, q);
         }
         plik.close();
     }
@@ -111,36 +115,72 @@ public:
     }
 
     int PoliczCmax() {
-
         int minC = INT_MAX;
-        rozwiazanie = std::vector<int>(zadania.size());
+        std::vector<Zadanie> bestOrder;
+        std::vector<Zadanie> perm = zadania;
+
+        std::sort(perm.begin(), perm.end());
 
         do {
-            int C = zadania[0].GetR() + zadania[0].GetP();
-            for (size_t i = 1; i < zadania.size(); i++) {
-                C = std::max(C, zadania[i].GetR()) + zadania[i].GetP();
-            }
-            C += zadania.back().GetQ();
+            int C = 0;
+            int actual_time = 0;
 
-            if(minC>C) {
-                minC=C;
-                rozwiazanie.clear();
-                for (auto i : zadania) {
-                    rozwiazanie.push_back(i.GetJ());
-                }
+            for (const auto& zadanie : perm) {
+                actual_time = std::max(actual_time, zadanie.GetR()) + zadanie.GetP();
+                C = std::max(C, actual_time + zadanie.GetQ());
             }
 
-        } while (std::next_permutation(zadania.begin(), zadania.end(), [](const Zadanie& a, const Zadanie& b) {
-            return a.GetJ() < b.GetJ();
-        }));
+            if (C < minC) {
+                minC = C;
+                bestOrder = perm;
+            }
+
+        } while (std::next_permutation(perm.begin(), perm.end()));
+
         std::cout << "Minimum Cmax: " << minC << std::endl;
         std::cout << "Rozwiazanie: ";
-        for (auto i : rozwiazanie) {
-            std::cout << i << " ";
+        for (const auto& zadanie : bestOrder) {
+            std::cout << zadanie.GetJ() << " ";
         }
+        std::cout << std::endl;
+
         return minC;
     }
+
+    int PoliczCmaxSortR() {
+        std::vector<Zadanie> perm = zadania;
+        std::sort(perm.begin(), perm.end(), [](const Zadanie& a, const Zadanie& b) {
+            return a.GetR() < b.GetR();
+        });
+
+        int C = 0, actual_time = 0;
+        for (const auto& zadanie : perm) {
+            actual_time = std::max(actual_time, zadanie.GetR()) + zadanie.GetP();
+            C = std::max(C, actual_time + zadanie.GetQ());
+        }
+
+        std::cout << "Cmax dla sortowania po r: " << C << std::endl;
+        return C;
+    }
+
+    int PoliczCmaxSortQ() {
+        std::vector<Zadanie> perm = zadania;
+        std::sort(perm.begin(), perm.end(), [](const Zadanie& a, const Zadanie& b) {
+            return a.GetQ() > b.GetQ();
+        });
+
+        int C = 0, actual_time = 0;
+        for (const auto& zadanie : perm) {
+            actual_time = std::max(actual_time, zadanie.GetR()) + zadanie.GetP();
+            C = std::max(C, actual_time + zadanie.GetQ());
+        }
+
+        std::cout << "Cmax dla sortowania po q: " << C << std::endl;
+        return C;
+    }
 };
+
+
 
 int main() {
 
@@ -148,8 +188,9 @@ int main() {
 
     inst.WczytajZPliku("../SCHRAGE1.DAT");
     inst.WyswietlInstancje();
+    inst.PoliczCmaxSortR();
+    inst.PoliczCmaxSortQ();
     inst.PoliczCmax();
 
     return 0;
 }
-
