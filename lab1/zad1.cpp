@@ -59,6 +59,7 @@ Wartością kryterium jest maksymalna z tych wartośći q PI(j)
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <climits>
 
 int j[5] = {1, 2, 3, 4, 5};
 int p[5] = {2, 5, 1, 1, 2};
