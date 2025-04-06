@@ -79,7 +79,7 @@ int main() {
   Problem inst;
 
   // Wczytaj instancję z pliku
-  inst.WczytajZPliku("../SCHRAGE2.DAT");
+  inst.WczytajZPliku("../schrage_data/SCHRAGE7.DAT");
 
   // Wyświetl zadania
   inst.WyswietlInstancje();
