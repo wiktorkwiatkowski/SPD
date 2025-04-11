@@ -4,6 +4,7 @@
 #include <queue>
 #include <algorithm>
 #include <climits>
+#include <chrono>
 
 #include "zadanie.hpp"
 
@@ -15,9 +16,9 @@ class Problem {
     // Funkcja wczytująca dane z pliku
     void WczytajZPliku(const std::string &nazwaPliku);
     void WyswietlInstancje();
-    int PoliczCmax();
-    int PoliczCmaxSortR();
-    int PoliczCmaxSortQ();
+    std::pair<int,int> PoliczCmax();
+    std::pair<int,int>  PoliczCmaxSortR();
+    std::pair<int,int> PoliczCmaxSortQ();
 
     
     // Komparator dla kolejki N (sortowanie po najmniejszym r)
@@ -35,5 +36,5 @@ class Problem {
     };
   
     // Metoda implementująca algorytm Schrage
-    void Schrage();
+    std::pair<int,int> Schrage();
   };

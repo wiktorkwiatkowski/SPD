@@ -71,29 +71,42 @@ trafia do kolejki priorytetowej
 #include <queue>
 #include <vector>
 
-#include "../include/problem.hpp"
+#include "../include/test.hpp"
 
 
 // Główna funkcja programu
 int main() {
-  Problem inst;
 
-  // Wczytaj instancję z pliku
-  inst.WczytajZPliku("../schrage_data/SCHRAGE7.DAT");
+  // Tworzymy instancję klasy Test
+  Test test;
+  // Uruchamiamy test
+  test.runTest();
 
-  // Wyświetl zadania
-  inst.WyswietlInstancje();
 
-  // Oblicz Cmax dla sortowania po r
-  inst.PoliczCmaxSortR();
+  // Problem inst;
 
-  // Oblicz Cmax dla sortowania po q
-  inst.PoliczCmaxSortQ();
+  // std::pair<int,int> wyniki;
 
-  // Oblicz minimalne Cmax poprzez przegląd zupełny (wszystkie permutacje)
-  inst.PoliczCmax();
+  // // Wczytaj instancję z pliku
+  // inst.WczytajZPliku("../schrage_data/SCHRAGE2.DAT");
 
-  inst.Schrage();
+  // // Wyświetl zadania
+  // inst.WyswietlInstancje();
+
+  // // Oblicz Cmax dla sortowania po r
+  // wyniki = inst.PoliczCmaxSortR();
+  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
+
+  // // Oblicz Cmax dla sortowania po q
+  // wyniki = inst.PoliczCmaxSortQ();
+  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
+
+  // // Oblicz minimalne Cmax poprzez przegląd zupełny (wszystkie permutacje)
+  // wyniki = inst.PoliczCmax();
+  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
+
+  // wyniki = inst.Schrage();
+  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
 
   return 0;
 }

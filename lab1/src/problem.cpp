@@ -31,10 +31,13 @@ void Problem::WyswietlInstancje() {
   std::cout << "============================================" << std::endl;
 }
 // Funkcja licząca Cmax dla wszystkich możliwych permutacji (przegląd zupełny)
-int Problem::PoliczCmax() {
+std::pair<int,int> Problem::PoliczCmax() {
   int minC = INT_MAX; // Inicjalizacja minimalnego Cmax
   std::vector<Zadanie> bestOrder;
   std::vector<Zadanie> perm = zadania;
+
+  std::chrono::high_resolution_clock::time_point start, end;
+  start = std::chrono::high_resolution_clock::now();
 
   // Sortowanie początkowe w kolejności leksykograficznej (po j)
   std::sort(perm.begin(), perm.end());
@@ -59,18 +62,26 @@ int Problem::PoliczCmax() {
       perm.begin(), perm.end())); // Generowanie kolejnych permutacji
 
   // Wyświetlanie najlepszego rozwiązania
-  std::cout << "Minimum Cmax dla wszystkich permutacji: " << minC << std::endl;
-  std::cout << "Rozwiazanie: ";
-  for (const auto &zadanie : bestOrder) {
-    std::cout << zadanie.GetJ() << " ";
-  }
-  std::cout << std::endl;
+  // std::cout << "Minimum Cmax dla wszystkich permutacji: " << minC << std::endl;
+  // std::cout << "Rozwiazanie: ";
+  // for (const auto &zadanie : bestOrder) {
+  //   std::cout << zadanie.GetJ() << " ";
+  // }
+  // std::cout << std::endl;
 
-  return minC;
+  end = std::chrono::high_resolution_clock::now();
+  int czas = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+  return {minC, czas};
+
 }
 // Obliczanie Cmax po posortowaniu zadań według dostępności `r`
-int Problem::PoliczCmaxSortR() {
+std::pair<int,int> Problem::PoliczCmaxSortR() {
   std::vector<Zadanie> perm = zadania;
+
+  std::chrono::high_resolution_clock::time_point start, end;
+  start = std::chrono::high_resolution_clock::now();
+  
   std::sort(perm.begin(), perm.end(), [](const Zadanie &a, const Zadanie &b) {
     return a.GetR() < b.GetR();
   });
@@ -81,13 +92,20 @@ int Problem::PoliczCmaxSortR() {
     C = std::max(C, actual_time + zadanie.GetQ());
   }
 
-  std::cout << "Cmax dla sortowania po r: " << C << std::endl;
-  return C;
+  end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+  // std::cout << "Cmax dla sortowania po r: " << C << std::endl;
+  return {C, duration.count()};
 }
 
 // Obliczanie Cmax po posortowaniu zadań według czasu stygnięcia `q`
-int Problem::PoliczCmaxSortQ() {
+std::pair<int,int> Problem::PoliczCmaxSortQ() {
   std::vector<Zadanie> perm = zadania;
+
+  std::chrono::high_resolution_clock::time_point start, end;
+  start = std::chrono::high_resolution_clock::now();
+
   std::sort(perm.begin(), perm.end(), [](const Zadanie &a, const Zadanie &b) {
     return a.GetQ() > b.GetQ();
   });
@@ -98,11 +116,14 @@ int Problem::PoliczCmaxSortQ() {
     C = std::max(C, actual_time + zadanie.GetQ());
   }
 
-  std::cout << "Cmax dla sortowania po q: " << C << std::endl;
-  return C;
+  end = std::chrono::high_resolution_clock::now();
+  int czas = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+  // std::cout << "Cmax dla sortowania po q: " << C << std::endl;
+  return {C, czas};
 }
 
-void Problem::Schrage() {
+std::pair<int,int> Problem::Schrage() {
 
   // Lambda do sortowania N (min-heap po r)
   auto compareR = [](const Zadanie &a, const Zadanie &b) {
@@ -113,6 +134,9 @@ void Problem::Schrage() {
   auto compareQ = [](const Zadanie &a, const Zadanie &b) {
     return a.GetQ() < b.GetQ();
   };
+
+  std::chrono::high_resolution_clock::time_point start, end;
+  start = std::chrono::high_resolution_clock::now();
 
   // Kolejka priorytetowa `N` przechowuje zadania nieuszeregowane, sortowane
   // według wartości `r` (czas dostępności zadania).
@@ -179,5 +203,10 @@ void Problem::Schrage() {
       Cmax = std::max(Cmax, t + e.GetQ());
     }
   }
-  std::cout << "Schrage Cmax: " << Cmax << std::endl;
+
+  end = std::chrono::high_resolution_clock::now();
+  int czas = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+  // std::cout << "Schrage Cmax: " << Cmax << std::endl;
+  return {Cmax,czas};
 }
