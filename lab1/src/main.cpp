@@ -79,34 +79,12 @@ int main() {
 
   // Tworzymy instancję klasy Test
   Test test;
-  // Uruchamiamy test
+
+  // Uruchamiamy testy dla pojedynczych instancji
   test.runTest();
 
-
-  // Problem inst;
-
-  // std::pair<int,int> wyniki;
-
-  // // Wczytaj instancję z pliku
-  // inst.WczytajZPliku("../schrage_data/SCHRAGE2.DAT");
-
-  // // Wyświetl zadania
-  // inst.WyswietlInstancje();
-
-  // // Oblicz Cmax dla sortowania po r
-  // wyniki = inst.PoliczCmaxSortR();
-  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
-
-  // // Oblicz Cmax dla sortowania po q
-  // wyniki = inst.PoliczCmaxSortQ();
-  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
-
-  // // Oblicz minimalne Cmax poprzez przegląd zupełny (wszystkie permutacje)
-  // wyniki = inst.PoliczCmax();
-  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
-
-  // wyniki = inst.Schrage();
-  // std::cout << wyniki.first << "," << wyniki.second << std::endl;
+  // Uruchamiamy testy dla dużej ilości instancji, liczy średnie czasy i błędy
+  test.runAverageTest();
 
   return 0;
 }

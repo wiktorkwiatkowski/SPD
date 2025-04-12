@@ -16,9 +16,10 @@ class Problem {
     // Funkcja wczytująca dane z pliku
     void WczytajZPliku(const std::string &nazwaPliku);
     void WyswietlInstancje();
-    std::pair<int,int> PoliczCmax();
-    std::pair<int,int>  PoliczCmaxSortR();
-    std::pair<int,int> PoliczCmaxSortQ();
+    std::pair<int,int> Brute();
+    std::pair<int,int>  SortR();
+    std::pair<int,int> SortQ();
+    std::pair<int,int> Wlasny();
 
     
     // Komparator dla kolejki N (sortowanie po najmniejszym r)
@@ -37,4 +38,5 @@ class Problem {
   
     // Metoda implementująca algorytm Schrage
     std::pair<int,int> Schrage();
+    std::pair<int,int> SchrageZPodzialem();
   };

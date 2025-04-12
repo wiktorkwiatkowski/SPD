@@ -10,6 +10,8 @@ class Zadanie {
     int GetP() const { return p; }
     int GetR() const { return r; }
     int GetQ() const { return q; }
+
+    void SetP(int p) { this->p = p; }
   
     // Operator porównania dla sortowania (sortuje rosnąco po j)
     bool operator<(const Zadanie &other) const { return j < other.j; }
