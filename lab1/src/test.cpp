@@ -4,6 +4,9 @@
 #include <vector>
 #include <cmath>
 
+#include <iomanip>  // dla std::setprecision
+#include <sstream>  // dla std::ostringstream
+
 int dataset_size[9] = {6, 7, 8, 9, 10, 11, 12, 20, 50};
 
 void Test::runTest() {
@@ -66,28 +69,30 @@ void Test::runTest() {
 
 
 void Test::runAverageTest() {
-    std::ofstream outFile("average_results.csv");
-    outFile << "DataSize,AvgSortR_Time[ns],AvgSortR_Error[%],AvgSortQ_Time[ns],AvgSortQ_Error[%],"
-            << "AvgSchrage_Time[ns],AvgSchrage_Error[%],AvgSchrageDiv_Time[ns],AvgSchrageDiv_Error[%],"
-            << "AvgBrute_Time[ms],AvgBrute_Error[%],AvgCustom_Time[ns],AvgCustom_Error[%]\n";
+    std::ofstream outFile("average_results_vertical.csv");
+    outFile << "Algorithm,6,7,8,9,10,11,12,20,50\n";
+    
+    std::vector<std::vector<std::string>> data(12, std::vector<std::string>(9, "-"));
 
     for(int size_index = 0; size_index < 9; size_index++) {
         int current_size = dataset_size[size_index];
         int instance_count = 50;
+        int loaded_instances = 0;
         
-        // Struktura do przechowywania sum
         struct Averages {
-            long long sortR_time = 0, sortQ_time = 0, schrage_time = 0, schrageDiv_time = 0, brute_time = 0, custom_time = 0;
-            double sortR_error = 0, sortQ_error = 0, schrage_error = 0, schrageDiv_error = 0, brute_error = 0, custom_error = 0;
-            int valid_brute_instances = 0;
+            long long sortR_time = 0, sortQ_time = 0, schrage_time = 0, 
+                     schrageDiv_time = 0, brute_time = 0, custom_time = 0;
+            double sortR_error = 0, sortQ_error = 0, schrage_error = 0, 
+                   schrageDiv_error = 0, brute_error = 0, custom_error = 0;
         } avg;
 
         for(int instance_num = 1; instance_num <= instance_count; instance_num++) {
             std::string nazwaPliku = "../test_data/average/n" + std::to_string(current_size) + 
                                     "/data" + std::to_string(instance_num) + ".DAT";
+            
             inst.WczytajZPliku(nazwaPliku);
+            loaded_instances++;
 
-            // Uruchom wszystkie algorytmy
             auto sortR = inst.SortR();
             auto sortQ = inst.SortQ();
             auto schrage = inst.Schrage();
@@ -95,15 +100,18 @@ void Test::runAverageTest() {
             auto brute = (current_size <= 12) ? inst.Brute() : std::make_pair(-1, -1);
             auto custom = inst.Wlasny();
 
-            // Znajdź najlepsze rozwiązanie
             std::vector<int> all_cmax = {sortR.first, sortQ.first, schrage.first, schrageDiv.first, custom.first};
-            if(current_size <= 12) all_cmax.push_back(brute.first);
+            if(current_size <= 12 && brute.first != -1) {
+                all_cmax.push_back(brute.first);
+            }
+            
+            if(all_cmax.empty()) continue;
+
             int best_cmax = *std::min_element(all_cmax.begin(), all_cmax.end());
 
-            // Funkcja do obliczania błędu
             auto calcError = [best_cmax](int cmax) {
-                return (cmax == -1 || cmax == best_cmax) ? 0.0 : 
-                       (100.0 * (cmax - best_cmax) / best_cmax);
+                if(cmax == -1) return 0.0;
+                return 100.0 * (cmax - best_cmax) / best_cmax;
             };
 
             // Akumuluj wyniki
@@ -113,9 +121,8 @@ void Test::runAverageTest() {
             avg.schrageDiv_time += schrageDiv.second;
             avg.custom_time += custom.second;
             
-            if(current_size <= 12) {
+            if(current_size <= 12 && brute.first != -1) {
                 avg.brute_time += brute.second;
-                avg.valid_brute_instances++;
             }
 
             avg.sortR_error += calcError(sortR.first);
@@ -124,32 +131,60 @@ void Test::runAverageTest() {
             avg.schrageDiv_error += calcError(schrageDiv.first);
             avg.custom_error += calcError(custom.first);
             
-            if(current_size <= 12) {
+            if(current_size <= 12 && brute.first != -1) {
                 avg.brute_error += calcError(brute.first);
             }
         }
 
-        // Oblicz średnie i zapisz wyniki
-        outFile << current_size << ","
-                << avg.sortR_time / instance_count << ","
-                << avg.sortR_error / instance_count << ","
-                << avg.sortQ_time / instance_count << ","
-                << avg.sortQ_error / instance_count << ","
-                << avg.schrage_time / instance_count << ","
-                << avg.schrage_error / instance_count << ","
-                << avg.schrageDiv_time / instance_count << ","
-                << "-" << ",";
-        
-        // Obsługa kolumny Brute Force
-        if(current_size <= 12) {
-            outFile << avg.brute_time / avg.valid_brute_instances << ","
-                    << avg.brute_error / avg.valid_brute_instances << ",";
-        } else {
-            outFile << "-,-,";
-        }
+        if(loaded_instances == 0) continue;
 
-        outFile << avg.custom_time / instance_count << ","
-                << avg.custom_error / instance_count << "\n";
+        // Funkcja do formatowania z 2 miejscami po przecinku
+        auto formatTwoDecimals = [](double value) {
+            std::ostringstream oss;
+            oss << std::fixed << std::setprecision(2);
+            oss << value;
+            return oss.str();
+        };
+
+        // Oblicz i formatuj średnie
+        data[0][size_index] = formatTwoDecimals(avg.sortR_time / (double)loaded_instances);
+        data[1][size_index] = formatTwoDecimals(avg.sortR_error / loaded_instances);
+        data[2][size_index] = formatTwoDecimals(avg.sortQ_time / (double)loaded_instances);
+        data[3][size_index] = formatTwoDecimals(avg.sortQ_error / loaded_instances);
+        data[4][size_index] = formatTwoDecimals(avg.schrage_time / (double)loaded_instances);
+        data[5][size_index] = formatTwoDecimals(avg.schrage_error / loaded_instances);
+        data[6][size_index] = formatTwoDecimals(avg.schrageDiv_time / (double)loaded_instances);
+        data[7][size_index] = formatTwoDecimals(avg.schrageDiv_error / loaded_instances);
+        
+        if(current_size <= 12) {
+            int valid_brute = (current_size <= 12) ? loaded_instances : 0;
+            if(valid_brute > 0) {
+                data[8][size_index] = formatTwoDecimals(avg.brute_time / (double)valid_brute);
+                data[9][size_index] = formatTwoDecimals(avg.brute_error / valid_brute);
+            }
+        }
+        
+        data[10][size_index] = formatTwoDecimals(avg.custom_time / (double)loaded_instances);
+        data[11][size_index] = formatTwoDecimals(avg.custom_error / loaded_instances);
+    }
+
+    // Nagłówki
+    std::vector<std::string> headers = {
+        "AvgSortR Time[ns]", "AvgSortR Error[%]",
+        "AvgSortQ Time[ns]", "AvgSortQ Error[%]",
+        "AvgSchrage Time[ns]", "AvgSchrage Error[%]",
+        "AvgSchrageDiv Time[ns]", "AvgSchrageDiv Error[%]",
+        "AvgBrute Time[ms]", "AvgBrute Error[%]",
+        "AvgCustom Time[ns]", "AvgCustom Error[%]"
+    };
+
+    // Zapisz dane
+    for(int i = 0; i < 12; i++) {
+        outFile << headers[i];
+        for(int j = 0; j < 9; j++) {
+            outFile << "," << data[i][j];
+        }
+        outFile << "\n";
     }
     
     outFile.close();

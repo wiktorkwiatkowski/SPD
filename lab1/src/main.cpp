@@ -74,7 +74,7 @@ trafia do kolejki priorytetowej
 #include "../include/test.hpp"
 
 
-// Główna funkcja programu
+// Program przeprowadza testy w folderze build generuje dwa pliki csv zgodne z wymaganiami sprawozdania
 int main() {
 
   // Tworzymy instancję klasy Test
