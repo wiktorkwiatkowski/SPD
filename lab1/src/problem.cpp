@@ -211,74 +211,57 @@ std::pair<int,int> Problem::Schrage() {
   return {Cmax,czas};
 }
 
-std::pair<int,int> Problem::SchrageZPodzialem() {
-  // Lambda do sortowania N (min-heap po r)
+
+
+std::pair<int, int> Problem::SchrageZPodzialem() {
+  // Min-heap po r
   auto compareR = [](const Zadanie &a, const Zadanie &b) {
-      return a.GetR() > b.GetR();
+    return a.GetR() > b.GetR();
   };
 
-  // Lambda do sortowania G (max-heap po q)
+  // Max-heap po q
   auto compareQ = [](const Zadanie &a, const Zadanie &b) {
-      return a.GetQ() < b.GetQ();
+    return a.GetQ() < b.GetQ();
   };
-
-  std::chrono::high_resolution_clock::time_point start, end;
-  start = std::chrono::high_resolution_clock::now();
 
   std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareR)> N(compareR, zadania);
   std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareQ)> G(compareQ);
 
   int t = 0;
   int Cmax = 0;
-  Zadanie current_task(-1, 0, 0, 0); // Dummy task
-  bool has_current_task = false;
+  Zadanie aktualneZadanie(0, 0, 0, 0); // Inicjalizacja aktualnego zadania
+  aktualneZadanie.SetP(0);
+  aktualneZadanie.SetQ(INT_MAX); // Wartość startowa do porównań
+
+  std::chrono::high_resolution_clock::time_point start, end;
+  start = std::chrono::high_resolution_clock::now();
 
   while (!G.empty() || !N.empty()) {
-      while (!N.empty() && N.top().GetR() <= t) {
-          auto task = N.top();
-          N.pop();
+    // Odswiez zbiór zadań gotowych
+    while (!N.empty() && N.top().GetR() <= t) {
+      Zadanie j = N.top();
+      N.pop();
+      G.push(j);
 
-          if (has_current_task && task.GetQ() > current_task.GetQ()) {
-              // Podziel zadanie
-              int remaining_p = current_task.GetP() - (t - task.GetR());
-              current_task.SetP(remaining_p);
-              G.push(current_task);
-              current_task = task;
-              t = task.GetR();
-          }
-          G.push(task);
+      // Przerwanie aktualnego zadania, jeśli nowe ma większe q
+      if (j.GetQ() > aktualneZadanie.GetQ()) {
+        aktualneZadanie.SetP(t - j.GetR()); // Zmniejsz pozostały czas
+        t = j.GetR();
+        if (aktualneZadanie.GetP() > 0) {
+          G.push(aktualneZadanie);
+        }
       }
+    }
 
-      if (G.empty()) {
-          t = N.top().GetR();
-          continue;
-      }
-
-      auto task = G.top();
+    if (G.empty()) {
+      t = N.top().GetR(); // Przerwa w pracy – czekamy na najbliższe zadanie
+    } else {
+      Zadanie j = G.top();
       G.pop();
-
-      if (has_current_task && task.GetQ() > current_task.GetQ()) {
-          // Podziel bieżące zadanie
-          int remaining_p = current_task.GetP() - (t - task.GetR());
-          current_task.SetP(remaining_p);
-          G.push(current_task);
-      }
-
-      current_task = task;
-      has_current_task = true;
-
-      int next_r = N.empty() ? INT_MAX : N.top().GetR();
-      int processing_time = std::min(current_task.GetP(), next_r - t);
-
-      t += processing_time;
-      current_task.SetP(current_task.GetP() - processing_time);
-
-      if (current_task.GetP() == 0) {
-          has_current_task = false;
-          Cmax = std::max(Cmax, t + current_task.GetQ());
-      } else {
-          G.push(current_task);
-      }
+      aktualneZadanie = j;
+      t += j.GetP();
+      Cmax = std::max(Cmax, t + j.GetQ());
+    }
   }
 
   end = std::chrono::high_resolution_clock::now();
@@ -286,6 +269,7 @@ std::pair<int,int> Problem::SchrageZPodzialem() {
 
   return {Cmax, czas};
 }
+
 
 
 
