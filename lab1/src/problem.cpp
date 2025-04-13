@@ -31,12 +31,12 @@ void Problem::WyswietlInstancje() {
   std::cout << "============================================" << std::endl;
 }
 
-// Funkcja licząca Cmax dla wszystkich możliwych permutacji (przegląd zupełny - brute force)
-std::pair<int,int> Problem::Brute() {
+// Funkcja licząca Cmax dla wszystkich możliwych permutacji (przegląd zupełny -
+// brute force)
+std::pair<int, int> Problem::Brute() {
   int minC = INT_MAX; // Inicjalizacja minimalnego Cmax
   std::vector<Zadanie> bestOrder;
   std::vector<Zadanie> perm = zadania;
-
 
   // Start pomiaru czasu
   std::chrono::high_resolution_clock::time_point start, end;
@@ -65,30 +65,29 @@ std::pair<int,int> Problem::Brute() {
       perm.begin(), perm.end())); // Generowanie kolejnych permutacji
 
   // Wyświetlanie najlepszego rozwiązania
-  // std::cout << "Minimum Cmax dla wszystkich permutacji: " << minC << std::endl;
-  // std::cout << "Rozwiazanie: ";
-  // for (const auto &zadanie : bestOrder) {
+  // std::cout << "Minimum Cmax dla wszystkich permutacji: " << minC <<
+  // std::endl; std::cout << "Rozwiazanie: "; for (const auto &zadanie :
+  // bestOrder) {
   //   std::cout << zadanie.GetJ() << " ";
   // }
   // std::cout << std::endl;
 
-  //koniec pomiaru czasu
+  // koniec pomiaru czasu
   end = std::chrono::high_resolution_clock::now();
-  int czas = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  int czas = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                 .count();
 
   return {minC, czas};
-
 }
 
-
 // Obliczanie Cmax po posortowaniu zadań według dostępności `r`
-std::pair<int,int> Problem::SortR() {
+std::pair<int, int> Problem::SortR() {
   std::vector<Zadanie> perm = zadania;
 
   // Start pomiaru czasu
   std::chrono::high_resolution_clock::time_point start, end;
   start = std::chrono::high_resolution_clock::now();
-  
+
   std::sort(perm.begin(), perm.end(), [](const Zadanie &a, const Zadanie &b) {
     return a.GetR() < b.GetR();
   });
@@ -101,14 +100,15 @@ std::pair<int,int> Problem::SortR() {
 
   // Koniec pomiaru czasu
   end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  auto duration =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
   // std::cout << "Cmax dla sortowania po r: " << C << std::endl;
   return {C, duration.count()};
 }
 
 // Obliczanie Cmax po posortowaniu zadań według czasu stygnięcia `q`
-std::pair<int,int> Problem::SortQ() {
+std::pair<int, int> Problem::SortQ() {
   std::vector<Zadanie> perm = zadania;
 
   // Start pomiaru czasu
@@ -127,13 +127,14 @@ std::pair<int,int> Problem::SortQ() {
 
   // Koniec pomiaru czasu
   end = std::chrono::high_resolution_clock::now();
-  int czas = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  int czas =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
   // std::cout << "Cmax dla sortowania po q: " << C << std::endl;
   return {C, czas};
 }
 
-std::pair<int,int> Problem::Schrage() {
+std::pair<int, int> Problem::Schrage() {
 
   // Lambda do sortowania N (kolejka min-heap po r)
   auto compareR = [](const Zadanie &a, const Zadanie &b) {
@@ -217,13 +218,12 @@ std::pair<int,int> Problem::Schrage() {
 
   // Koniec pomiaru czasu
   end = std::chrono::high_resolution_clock::now();
-  int czas = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  int czas =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
   // std::cout << "Schrage Cmax: " << Cmax << std::endl;
-  return {Cmax,czas};
+  return {Cmax, czas};
 }
-
-
 
 // Algorytm Schrage z podziałem zadan
 std::pair<int, int> Problem::SchrageZPodzialem() {
@@ -246,12 +246,14 @@ std::pair<int, int> Problem::SchrageZPodzialem() {
   // Inicjalizacja kolejki N jako min-heap po r.
   // Przechowuje zadania nieuszeregowane, posortowane rosnąco według r`.
   // Kolejka jest od razu wypełniona wszystkimi zadaniami z listy zadania.
-  std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareR)> N(compareR, zadania);
+  std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareR)> N(
+      compareR, zadania);
 
   // Inicjalizacja kolejki G jako max-heap po q.
   // Przechowuje zadania gotowe do wykonania, posortowane malejąco według q.
   // Kolejka jest początkowo pusta, zadania są dodawane dynamicznie.
-  std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareQ)> G(compareQ);
+  std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareQ)> G(
+      compareQ);
 
   int t = 0;    // Aktualny czas symulacji
   int Cmax = 0; // Maksymalny czas dostarczenia
@@ -316,14 +318,15 @@ std::pair<int, int> Problem::SchrageZPodzialem() {
 
   // Zakończenie pomiaru czasu i obliczenie czasu wykonania w nanosekundach.
   end = std::chrono::high_resolution_clock::now();
-  int czas = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  int czas =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
   // Zwrócenie pary wartości: maksymalnego czasu dostarczenia (Cmax)
   // oraz czasu wykonania algorytmu w nanosekundach.
   return {Cmax, czas};
 }
 
-std::pair<int,int> Problem::Wlasny() {
+std::pair<int, int> Problem::Wlasny() {
 
   float w_r = 0.3f;
   float w_q = 0.7f;
@@ -337,48 +340,35 @@ std::pair<int,int> Problem::Wlasny() {
   int t = 0, C_max = 0;
 
   while (!remaining_tasks.empty()) {
-      // Znajdź zadania gotowe do wykonania (r_j <= t)
-      std::vector<std::pair<float, size_t>> ready_tasks;
-      for (size_t i = 0; i < remaining_tasks.size(); ++i) {
-          if (remaining_tasks[i].GetR() <= t) {
-            // Oblicz priorytet
-              float priority = w_r * remaining_tasks[i].GetR() + 
-                             w_q * remaining_tasks[i].GetQ() + 
-                             w_p * remaining_tasks[i].GetP();
-              ready_tasks.emplace_back(priority, i);
-          }
+    // Znajdź zadania gotowe do wykonania (r_j <= t)
+    std::vector<std::pair<float, size_t>> ready_tasks;
+    for (size_t i = 0; i < remaining_tasks.size(); ++i) {
+      if (remaining_tasks[i].GetR() <= t) {
+        // Oblicz priorytet
+        float priority = w_r * remaining_tasks[i].GetR() + w_q * remaining_tasks[i].GetQ() + w_p * remaining_tasks[i].GetP();
+        ready_tasks.emplace_back(priority, i);
       }
+    }
 
-      if (ready_tasks.empty()) {
-          // Brak gotowych zadań - znajdź minimalne r_j
-          auto min_r_task = std::min_element(
-              remaining_tasks.begin(),
-              remaining_tasks.end(),
-              [](const Zadanie& a, const Zadanie& b) {
-                  return a.GetR() < b.GetR();
-              });
-          t = min_r_task->GetR();
-      } else {
-          // Wybierz zadanie z najniższym priorytetem
-          auto next_task = std::min_element(
-              ready_tasks.begin(),
-              ready_tasks.end(),
-              [](const auto& a, const auto& b) {
-                  return a.first < b.first;
-              });
+    if (ready_tasks.empty()) {
+      // Brak gotowych zadań - znajdź minimalne r_j
+      auto min_r_task = std::min_element(remaining_tasks.begin(), remaining_tasks.end(), [](const Zadanie &a, const Zadanie &b) {return a.GetR() < b.GetR();});
+      t = min_r_task->GetR();
+    } else {
+      // Wybierz zadanie z najniższym priorytetem
+      auto next_task = std::min_element(ready_tasks.begin(), ready_tasks.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
 
-          Zadanie chosen = remaining_tasks[next_task->second];
-          schedule.push_back(chosen);
-          remaining_tasks.erase(remaining_tasks.begin() + next_task->second);
+      Zadanie chosen = remaining_tasks[next_task->second];
+      schedule.push_back(chosen);
+      remaining_tasks.erase(remaining_tasks.begin() + next_task->second);
 
-          // Aktualizuj czas i C_max
-          t = std::max(t, chosen.GetR()) + chosen.GetP();
-          C_max = std::max(C_max, t + chosen.GetQ());
-      }
+      // Aktualizuj czas i C_max
+      t = std::max(t, chosen.GetR()) + chosen.GetP();
+      C_max = std::max(C_max, t + chosen.GetQ());
+    }
   }
 
   end = std::chrono::high_resolution_clock::now();
-  int czas = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-
+  int czas =  std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
   return {C_max, czas};
 }
