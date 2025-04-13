@@ -78,27 +78,6 @@ trafia do kolejki priorytetowej
 // Program przeprowadza testy w folderze build generuje dwa pliki csv zgodne z wymaganiami sprawozdania
 int main() {
 
-    // Problem inst;
-    // inst.WczytajZPliku("../test_data/single/datatest.DAT");
-
-    // inst.WyswietlInstancje();
-    // auto sortR = inst.SortR();
-    // auto sortQ = inst.SortQ();
-    // auto schrage = inst.Schrage();
-    // auto schrageDiv = inst.SchrageZPodzialem();
-    // // auto brute = inst.Brute();
-    // auto custom = inst.Wlasny();
-    // std::cout << "SortR: " << sortR.first << " | czas: " << sortR.second << std::endl;
-    // std::cout << "SortQ: " << sortQ.first << " | czas: " << sortQ.second << std::endl;
-    // std::cout << "Schrage: " << schrage.first << " | czas: " << schrage.second << std::endl;
-    // std::cout << "Schrage z podziałem: " << schrageDiv.first << " | czas: " << schrageDiv.second << std::endl;
-    // // std::cout << "Brute: " << brute.first << " | czas: " << brute.second << std::endl;
-    // std::cout << "Custom: " << custom.first << " | czas: " << custom.second << std::endl;
-
-
-
-    
-
   // Tworzymy instancję klasy Test
   Test test;
 
@@ -106,7 +85,7 @@ int main() {
   test.runTest();
 
   // Uruchamiamy testy dla dużej ilości instancji, liczy średnie czasy i błędy
-//   test.runAverageTest();
+  test.runAverageTest();
 
   return 0;
 }
