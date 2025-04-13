@@ -10,87 +10,108 @@
 int dataset_size[9] = {6, 7, 8, 9, 10, 11, 12, 20, 50};
 
 void Test::runTest() {
-    std::ofstream outFile("result.csv");
-    outFile << "DataSize,SortR_Cmax,SortR_Time[ns],SortQ_Cmax,SortQ_Time[ns],Schrage_Cmax,Schrage_Time[ns],Schrage_Div_Cmax,Schrage_Div_Time[ns],BruteForce_Cmax,BruteForce_Time[ms],Custom_Cmax,Custom_Time[ns]\n";
-    
-    for(int i = 0; i < 9; i++) {
-        std::string nazwaPliku = "../test_data/single/data" + std::to_string(i+1) + ".DAT";
-        inst.WczytajZPliku(nazwaPliku);
+    std::ofstream outFile("result_vertical.csv");
 
-        // Collect all Cmax values to find the best one
-        std::vector<int> all_cmax;
-        
-        // Run all algorithms and store Cmax values
+    // Nagłówek: nazwa algorytmu + kolumny z rozmiarami danych
+    std::vector<std::string> headers = { "SortR Cmax[%]", "SortR Time[ns]",
+                                         "SortQ Cmax[%]", "SortQ Time[ns]",
+                                         "Schrage Cmax[%]", "Schrage Time[ns]",
+                                         "SchrageDiv Cmax[%]", "SchrageDiv Time[ns]",
+                                         "BruteForce Cmax[%]", "BruteForce Time[ms]",
+                                         "Custom Cmax[%]", "Custom Time[ns]" };
+
+    std::vector<std::vector<std::string>> results(12, std::vector<std::string>(9));
+
+    for (int i = 0; i < 9; i++) {
+        std::string filename = "../test_data/single/data" + std::to_string(i + 1) + ".DAT";
+        inst.WczytajZPliku(filename);
+
         auto sortR = inst.SortR();
         auto sortQ = inst.SortQ();
         auto schrage = inst.Schrage();
         auto schrageDiv = inst.SchrageZPodzialem();
-        auto brute = (i <= 6) ? inst.Brute() : std::make_pair(-1, 0);
+        auto brute = (i <= 6) ? inst.Brute() : std::make_pair(-1, -1);
         auto custom = inst.Wlasny();
 
-        // Store all Cmax values (excluding brute force for i > 5)
-        all_cmax.push_back(sortR.first);
-        all_cmax.push_back(sortQ.first);
-        all_cmax.push_back(schrage.first);
-        all_cmax.push_back(schrageDiv.first);
-        if(i <= 6) all_cmax.push_back(brute.first);
-        all_cmax.push_back(custom.first);
+        // Wyznacz najlepszy cmax z pominięciem Schrage z podziałem
+        std::vector<int> cmax_for_best = { sortR.first, sortQ.first, schrage.first, custom.first };
+        if (i <= 6 && brute.first != -1) cmax_for_best.push_back(brute.first);
 
-        // Find the best Cmax (minimum value)
-        int best_cmax = *std::min_element(all_cmax.begin(), all_cmax.end());
+        int best_cmax = *std::min_element(cmax_for_best.begin(), cmax_for_best.end());
 
-        // Helper function to format output with error percentage
-        auto formatWithError = [best_cmax](int cmax) {
-            if(cmax == -1) return std::string("-");
-            if(cmax == best_cmax) return std::to_string(cmax) + " [0%]";
-            
+        auto formatWithError = [best_cmax](int cmax) -> std::string {
+            if (cmax == -1) return "-";
+            if (cmax == best_cmax) return std::to_string(cmax) + " [0%]";
             double error = 100.0 * (cmax - best_cmax) / best_cmax;
             return std::to_string(cmax) + " [" + std::to_string(static_cast<int>(std::round(error))) + "%]";
         };
 
-        // Write results
-        outFile << dataset_size[i] << ","
-                << formatWithError(sortR.first) << "," << sortR.second << ","
-                << formatWithError(sortQ.first) << "," << sortQ.second << ","
-                << formatWithError(schrage.first) << "," << schrage.second << ","
-                << schrageDiv.first << "," << schrageDiv.second << ",";
-        
-        if(i > 6) {
-            outFile << "-,-";
-        } else {
-            outFile << formatWithError(brute.first) << "," << brute.second;
-        }
+        // Wypełnij wyniki
+        results[0][i]  = formatWithError(sortR.first);
+        results[1][i]  = std::to_string(sortR.second);
 
-        outFile << "," << formatWithError(custom.first) << "," << custom.second << "\n";
+        results[2][i]  = formatWithError(sortQ.first);
+        results[3][i]  = std::to_string(sortQ.second);
+
+        results[4][i]  = formatWithError(schrage.first);
+        results[5][i]  = std::to_string(schrage.second);
+
+        results[6][i]  = schrageDiv.first == -1 ? "-" : std::to_string(schrageDiv.first) + " [-]";
+        results[7][i]  = std::to_string(schrageDiv.second);
+
+        results[8][i]  = (i > 6 || brute.first == -1) ? "-" : formatWithError(brute.first);
+        results[9][i]  = (i > 6 || brute.first == -1) ? "-" : std::to_string(brute.second);
+
+        results[10][i] = formatWithError(custom.first);
+        results[11][i] = std::to_string(custom.second);
     }
-    
+
+    // Wypisz nagłówki
+    outFile << "Algorithm/DataSize";
+    for (int i = 0; i < 9; ++i)
+        outFile << "," << dataset_size[i];
+    outFile << "\n";
+
+    // Wypisz dane
+    for (int row = 0; row < 12; ++row) {
+        outFile << headers[row];
+        for (int col = 0; col < 9; ++col) {
+            outFile << "," << results[row][col];
+        }
+        outFile << "\n";
+    }
+
     outFile.close();
 }
 
 
 void Test::runAverageTest() {
-    std::ofstream outFile("average_results_vertical.csv");
-    outFile << "Algorithm,6,7,8,9,10,11,12,20,50\n";
-    
-    std::vector<std::vector<std::string>> data(12, std::vector<std::string>(9, "-"));
+    std::ofstream avgOut("average_results_vertical.csv");
+    std::ofstream maxOut("max_error_results_vertical.csv");
+
+    avgOut << "Algorithm,6,7,8,9,10,11,12,20,50\n";
+    maxOut << "Algorithm,6,7,8,9,10,11,12,20,50\n";
+
+    std::vector<std::vector<std::string>> avg_data(12, std::vector<std::string>(9, "-"));
+    std::vector<std::vector<std::string>> max_data(12, std::vector<std::string>(9, "-"));
 
     for(int size_index = 0; size_index < 9; size_index++) {
         int current_size = dataset_size[size_index];
         int instance_count = 50;
         int loaded_instances = 0;
-        
-        struct Averages {
-            long long sortR_time = 0, sortQ_time = 0, schrage_time = 0, 
-                     schrageDiv_time = 0, brute_time = 0, custom_time = 0;
-            double sortR_error = 0, sortQ_error = 0, schrage_error = 0, 
-                   schrageDiv_error = 0, brute_error = 0, custom_error = 0;
-        } avg;
 
-        for(int instance_num = 1; instance_num <= instance_count; instance_num++) {
-            std::string nazwaPliku = "../test_data/average/n" + std::to_string(current_size) + 
-                                    "/data" + std::to_string(instance_num) + ".DAT";
-            
-            inst.WczytajZPliku(nazwaPliku);
+        struct Aggregates {
+            long long time_sum = 0;
+            double error_sum = 0;
+            double max_error = 0;
+        };
+
+        std::vector<Aggregates> aggr(6); // 0: SortR, 1: SortQ, 2: Schrage, 3: SchrageDiv, 4: Brute, 5: Custom
+
+        for(int inst_num = 1; inst_num <= instance_count; inst_num++) {
+            std::string filename = "../test_data/average/n" + std::to_string(current_size) + "/data" + std::to_string(inst_num) + ".DAT";
+
+            inst.WczytajZPliku(filename);
             loaded_instances++;
 
             auto sortR = inst.SortR();
@@ -100,72 +121,62 @@ void Test::runAverageTest() {
             auto brute = (current_size <= 12) ? inst.Brute() : std::make_pair(-1, -1);
             auto custom = inst.Wlasny();
 
-            std::vector<int> all_cmax = {sortR.first, sortQ.first, schrage.first, schrageDiv.first, custom.first};
+            // Zbieraj tylko cmaxy z algorytmów NIE-preemptive
+            std::vector<int> cmax_candidates;
+            cmax_candidates.push_back(sortR.first);
+            cmax_candidates.push_back(sortQ.first);
+            cmax_candidates.push_back(schrage.first);
+            cmax_candidates.push_back(custom.first);
             if(current_size <= 12 && brute.first != -1) {
-                all_cmax.push_back(brute.first);
+                cmax_candidates.push_back(brute.first);
             }
-            
-            if(all_cmax.empty()) continue;
 
-            int best_cmax = *std::min_element(all_cmax.begin(), all_cmax.end());
+            int best_cmax = *std::min_element(cmax_candidates.begin(), cmax_candidates.end());
 
-            auto calcError = [best_cmax](int cmax) {
-                if(cmax == -1) return 0.0;
+            auto calcError = [best_cmax](int cmax) -> double {
+                if(cmax == -1 || best_cmax == 0) return 0.0;
                 return 100.0 * (cmax - best_cmax) / best_cmax;
             };
 
-            // Akumuluj wyniki
-            avg.sortR_time += sortR.second;
-            avg.sortQ_time += sortQ.second;
-            avg.schrage_time += schrage.second;
-            avg.schrageDiv_time += schrageDiv.second;
-            avg.custom_time += custom.second;
-            
-            if(current_size <= 12 && brute.first != -1) {
-                avg.brute_time += brute.second;
-            }
+            // Akumulacja wyników
+            std::pair<int, long long> algs[6] = {sortR, sortQ, schrage, schrageDiv, brute, custom};
+            for (int j = 0; j < 6; ++j) {
+                if (algs[j].first == -1) continue;
+                aggr[j].time_sum += algs[j].second;
 
-            avg.sortR_error += calcError(sortR.first);
-            avg.sortQ_error += calcError(sortQ.first);
-            avg.schrage_error += calcError(schrage.first);
-            avg.schrageDiv_error += calcError(schrageDiv.first);
-            avg.custom_error += calcError(custom.first);
-            
-            if(current_size <= 12 && brute.first != -1) {
-                avg.brute_error += calcError(brute.first);
+                // dla Schrage z podziałem – nie licz błędu
+                if (j == 3) continue;
+
+                double err = calcError(algs[j].first);
+                aggr[j].error_sum += err;
+                aggr[j].max_error = std::max(aggr[j].max_error, err);
             }
         }
 
-        if(loaded_instances == 0) continue;
+        if (loaded_instances == 0) continue;
 
-        // Funkcja do formatowania z 2 miejscami po przecinku
-        auto formatTwoDecimals = [](double value) {
+        auto format = [](double val) {
             std::ostringstream oss;
-            oss << std::fixed << std::setprecision(2);
-            oss << value;
+            oss << std::fixed << std::setprecision(2) << val;
             return oss.str();
         };
 
-        // Oblicz i formatuj średnie
-        data[0][size_index] = formatTwoDecimals(avg.sortR_time / (double)loaded_instances);
-        data[1][size_index] = formatTwoDecimals(avg.sortR_error / loaded_instances);
-        data[2][size_index] = formatTwoDecimals(avg.sortQ_time / (double)loaded_instances);
-        data[3][size_index] = formatTwoDecimals(avg.sortQ_error / loaded_instances);
-        data[4][size_index] = formatTwoDecimals(avg.schrage_time / (double)loaded_instances);
-        data[5][size_index] = formatTwoDecimals(avg.schrage_error / loaded_instances);
-        data[6][size_index] = formatTwoDecimals(avg.schrageDiv_time / (double)loaded_instances);
-        data[7][size_index] = formatTwoDecimals(avg.schrageDiv_error / loaded_instances);
-        
-        if(current_size <= 12) {
-            int valid_brute = (current_size <= 12) ? loaded_instances : 0;
-            if(valid_brute > 0) {
-                data[8][size_index] = formatTwoDecimals(avg.brute_time / (double)valid_brute);
-                data[9][size_index] = formatTwoDecimals(avg.brute_error / valid_brute);
+        // Wypełnianie danych do tabeli
+        for (int i = 0; i < 6; ++i) {
+            int avg_i = i * 2;
+            if (i == 4 && current_size > 12) continue;  // brute dla n > 12 pomijamy
+
+            avg_data[avg_i][size_index] = format(aggr[i].time_sum / (double)loaded_instances);
+
+            if (i == 3) {
+                // Schrage z podziałem — błąd oznaczany jako "-"
+                avg_data[avg_i + 1][size_index] = "-";
+                max_data[avg_i + 1][size_index] = "-";
+            } else {
+                avg_data[avg_i + 1][size_index] = format(aggr[i].error_sum / loaded_instances);
+                max_data[avg_i + 1][size_index] = format(aggr[i].max_error);
             }
         }
-        
-        data[10][size_index] = formatTwoDecimals(avg.custom_time / (double)loaded_instances);
-        data[11][size_index] = formatTwoDecimals(avg.custom_error / loaded_instances);
     }
 
     // Nagłówki
@@ -178,14 +189,24 @@ void Test::runAverageTest() {
         "AvgCustom Time[ns]", "AvgCustom Error[%]"
     };
 
-    // Zapisz dane
-    for(int i = 0; i < 12; i++) {
-        outFile << headers[i];
-        for(int j = 0; j < 9; j++) {
-            outFile << "," << data[i][j];
+    // Zapisz do pliku średnie
+    for (int i = 0; i < 12; ++i) {
+        avgOut << headers[i];
+        for (int j = 0; j < 9; ++j) {
+            avgOut << "," << avg_data[i][j];
         }
-        outFile << "\n";
+        avgOut << "\n";
     }
-    
-    outFile.close();
+
+    // Zapisz do pliku maksymalne błędy
+    for (int i = 1; i < 12; i += 2) {  // tylko błędy
+        maxOut << headers[i];
+        for (int j = 0; j < 9; ++j) {
+            maxOut << "," << max_data[i][j];
+        }
+        maxOut << "\n";
+    }
+
+    avgOut.close();
+    maxOut.close();
 }
