@@ -149,25 +149,25 @@ std::pair<int,int> Problem::Schrage() {
   std::chrono::high_resolution_clock::time_point start, end;
   start = std::chrono::high_resolution_clock::now();
 
-  // Kolejka priorytetowa `N` przechowuje zadania nieuszeregowane, sortowane
-  // według wartości `r` (czas dostępności zadania).
-  // Jest to tzw. min-heap, czyli element o najmniejszym `r` znajduje się na
+  // Kolejka priorytetowa N przechowuje zadania nieuszeregowane, sortowane
+  // według wartości r (czas dostępności zadania).
+  // Jest to tzw. min-heap, czyli element o najmniejszym r znajduje się na
   // szczycie kolejki.
   //
-  // `priority_queue` domyślnie działa jako max-heap (największy element na
+  // priority_queue domyślnie działa jako max-heap (największy element na
   // szczycie). Odwracamy porządek sortowania(przez lambde compareR), aby
-  // uzyskać min-heap: najmniejsze `r` na szczycie. Odrazu iniciujemy kolejke
+  // uzyskać min-heap: najmniejsze r na szczycie. Odrazu iniciujemy kolejke
   // zadaniami i sortujemy lamdą
 
   std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareR)> N(
       compareR, zadania);
 
-  // Kolejka priorytetowa `G` przechowuje zadania gotowe do wykonania,
-  // sortowane według `q` (czas dostarczenia zadania).
-  // Jest to max-heap, czyli element o największym `q` znajduje się na
+  // Kolejka priorytetowa G przechowuje zadania gotowe do wykonania,
+  // sortowane według q (czas dostarczenia zadania).
+  // Jest to max-heap, czyli element o największym q znajduje się na
   // szczycie kolejki.
   //
-  // Kolejka `G` jest początkowo pusta, ponieważ nie przekazujemy do niej
+  // Kolejka G jest początkowo pusta, ponieważ nie przekazujemy do niej
   // żadnych danych przy inicjalizacji.
   // Zadania będą dodawane dynamicznie podczas działania algorytmu Schrage.
   //
@@ -228,28 +228,28 @@ std::pair<int,int> Problem::Schrage() {
 // Algorytm Schrage z podziałem zadan
 std::pair<int, int> Problem::SchrageZPodzialem() {
   // Lambda do sortowania N (kolejka min-heap po r)
-  // Porównuje dwa zadania po wartości `r` (czas dostępności zadania).
-  // Zwraca `true`, jeśli `r` pierwszego zadania jest większe niż drugiego,
-  // co skutkuje min-heap (najmniejsze `r` na szczycie kolejki).
+  // Porównuje dwa zadania po wartości r (czas dostępności zadania).
+  // Zwraca true, jeśli r pierwszego zadania jest większe niż drugiego,
+  // co skutkuje min-heap (najmniejsze r na szczycie kolejki).
   auto compareR = [](const Zadanie &a, const Zadanie &b) {
     return a.GetR() > b.GetR();
   };
 
   // Lambda do sortowania G (kolejka max-heap po q)
-  // Porównuje dwa zadania po wartości `q` (czas dostarczenia zadania).
-  // Zwraca `true`, jeśli `q` pierwszego zadania jest mniejsze niż drugiego,
-  // co skutkuje max-heap (największe `q` na szczycie kolejki).
+  // Porównuje dwa zadania po wartości q (czas dostarczenia zadania).
+  // Zwraca true, jeśli q pierwszego zadania jest mniejsze niż drugiego,
+  // co skutkuje max-heap (największe q na szczycie kolejki).
   auto compareQ = [](const Zadanie &a, const Zadanie &b) {
     return a.GetQ() < b.GetQ();
   };
 
-  // Inicjalizacja kolejki `N` jako min-heap po `r`.
-  // Przechowuje zadania nieuszeregowane, posortowane rosnąco według `r`.
-  // Kolejka jest od razu wypełniona wszystkimi zadaniami z listy `zadania`.
+  // Inicjalizacja kolejki N jako min-heap po r.
+  // Przechowuje zadania nieuszeregowane, posortowane rosnąco według r`.
+  // Kolejka jest od razu wypełniona wszystkimi zadaniami z listy zadania.
   std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareR)> N(compareR, zadania);
 
-  // Inicjalizacja kolejki `G` jako max-heap po `q`.
-  // Przechowuje zadania gotowe do wykonania, posortowane malejąco według `q`.
+  // Inicjalizacja kolejki G jako max-heap po q.
+  // Przechowuje zadania gotowe do wykonania, posortowane malejąco według q.
   // Kolejka jest początkowo pusta, zadania są dodawane dynamicznie.
   std::priority_queue<Zadanie, std::vector<Zadanie>, decltype(compareQ)> G(compareQ);
 
@@ -268,17 +268,17 @@ std::pair<int, int> Problem::SchrageZPodzialem() {
   start = std::chrono::high_resolution_clock::now();
 
   // Główna pętla algorytmu - działa dopóki są zadania do przetworzenia
-  // (w kolejce `N` lub `G`).
+  // (w kolejce N lub G).
   while (!G.empty() || !N.empty()) {
     // Aktualizacja zbioru zadań gotowych do wykonania (G).
-    // Przenoszenie zadań z kolejki `N` do `G`, jeśli ich czas dostępności `r`
-    // jest mniejszy lub równy aktualnemu czasowi `t`.
+    // Przenoszenie zadań z kolejki N do G, jeśli ich czas dostępności r
+    // jest mniejszy lub równy aktualnemu czasowi t.
     while (!N.empty() && N.top().GetR() <= t) {
       Zadanie j = N.top();
       N.pop();
       G.push(j);
 
-      // Sprawdzenie, czy nowo dodane zadanie ma większe `q` niż aktualnie
+      // Sprawdzenie, czy nowo dodane zadanie ma większe q niż aktualnie
       // przetwarzane zadanie. Jeśli tak, następuje przerwanie przetwarzania.
       if (j.GetQ() > aktualneZadanie.GetQ()) {
         // Obliczenie pozostałego czasu przetwarzania aktualnego zadania
@@ -287,19 +287,19 @@ std::pair<int, int> Problem::SchrageZPodzialem() {
         t = j.GetR(); // Cofnięcie czasu do momentu dostępności nowego zadania
 
         // Jeśli pozostały czas przetwarzania jest większy od zera,
-        // zadanie wraca do kolejki `G`.
+        // zadanie wraca do kolejki G.
         if (aktualneZadanie.GetP() > 0) {
           G.push(aktualneZadanie);
         }
       }
     }
 
-    // Jeśli kolejka `G` jest pusta, oznacza to, że nie ma zadań gotowych.
-    // Czekamy na najbliższe dostępne zadanie, ustawiając czas `t` na jego `r`.
+    // Jeśli kolejka G jest pusta, oznacza to, że nie ma zadań gotowych.
+    // Czekamy na najbliższe dostępne zadanie, ustawiając czas t na jego r.
     if (G.empty()) {
       t = N.top().GetR();
     } else {
-      // Pobranie zadania o największym `q` z kolejki `G`.
+      // Pobranie zadania o największym q z kolejki G.
       Zadanie j = G.top();
       G.pop();
       aktualneZadanie = j; // Rozpoczęcie przetwarzania nowego zadania
@@ -308,7 +308,7 @@ std::pair<int, int> Problem::SchrageZPodzialem() {
       t += j.GetP();
 
       // Aktualizacja maksymalnego czasu dostarczenia.
-      // Nowa wartość to maksimum z dotychczasowego `Cmax` i `t + q` (czas
+      // Nowa wartość to maksimum z dotychczasowego Cmax i t + q (czas
       // zakończenia + czas dostarczenia).
       Cmax = std::max(Cmax, t + j.GetQ());
     }
@@ -318,36 +318,10 @@ std::pair<int, int> Problem::SchrageZPodzialem() {
   end = std::chrono::high_resolution_clock::now();
   int czas = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
-  // Zwrócenie pary wartości: maksymalnego czasu dostarczenia (`Cmax`)
+  // Zwrócenie pary wartości: maksymalnego czasu dostarczenia (Cmax)
   // oraz czasu wykonania algorytmu w nanosekundach.
   return {Cmax, czas};
 }
-
-
-
-
-
-
-
-
-
-
-// Algorytm własny - priorytetowy(zadania, w_r, w_q, w_p):
-//     1. Nieprzetworzone = lista wszystkich zadań
-//     2. t = 0  # aktualny czas
-//     3. π = [] # kolejność zadań
-//     4. Dopóki Nieprzetworzone ≠ ∅:
-//        a. Dla każdego zadania j w Nieprzetworzone:
-//           - Oblicz Priority(j) = w_r * r_j + w_q * q_j + w_p * p_j
-//        b. Wybierz zadanie j z NajMNIEJSZYM Priority(j) i r_j ≤ t
-//        c. Jeśli brak zadań gotowych:
-//           - t = min{r_j | j ∈ Nieprzetworzone}  # przeskocz w czasie
-//        d. W przeciwnym razie:
-//           - Dodaj j do π
-//           - Usuń j z Nieprzetworzone
-//           - t = t + p_j
-//     5. Oblicz C_max(π) i zwróć wynik
-
 
 std::pair<int,int> Problem::Wlasny() {
 
