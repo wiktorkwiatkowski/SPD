@@ -1,0 +1,21 @@
+Pm || Cmax dwie maszyny równoglegle 
+interesuje nas które zadanie idzie na który procesor 
+dla każdej maszyny "liste" zadań np. wektor 
+m - liczba maszyn
+n - liczba adań
+pj - czas wykonywania zadania j
+
+na 3.0
+LSA, LPT (list scheduling algorothm, lonest procesing time)
+LSA -> zbiór zadań i wrzucamy na pierwszy wolny procesor 
+LPT -> sortujemy zadania które wykonują się najdłużej, żeby były pierwsze
+
+
+ 0 - zadanie na maszynie M1
+ 1 - zadanie j na maszynie M2
+ n = 5 zadań
+ jesteśmy w stanie zrobić 2^29 bo liczmy złożoność obliczeniową dla 1/2*O(2^n)
+
+Dlaczego dzielimy przez dwa? bo 00000 i 11111 to to samo 
+
+Zadanie to przygotować schemat liczenie LSA i LPT 
