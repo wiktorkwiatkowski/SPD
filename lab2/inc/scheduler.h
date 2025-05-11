@@ -7,25 +7,35 @@
 #include <chrono>
 #include <random>
 
+// Klasa do reprezentacji jednego zadania
 class Task {
-    int id;
-    int processingTime;
+    int id; // Identyfikator zadania 
+    int processingTime; // czas potrzeby na jego wykonanie
     
 public:
     Task(int id, int p) : id(id), processingTime(p) {}
     
+    // Zwraca ID
     int getId() const { return id; }
+
+    // Zwraca czas wykonywania 
     int getProcessingTime() const { return processingTime; }
 };
 
+// Klasa do planująca zadania
 class ParallelScheduler {
+    // Liczba maszyn
     int machineCount;
+    // Lista zadań, które trzeba rozdzielić pomiędzy maszyny 
     std::vector<Task> tasks;
     
 public:
+    // Funkcja do generowania losowej instancji zadania
     void generateRandomInstance(int machines, int tasksCount, int minP, int maxP);
+    // Wyświetla wygenerowaną instację
     void displayInstance() const;
     
+    // 
     std::pair<int, long long> calculateLSA() const;
     std::pair<int, long long> calculateLPT() const;
     std::pair<int, long long> bruteForce() const;
