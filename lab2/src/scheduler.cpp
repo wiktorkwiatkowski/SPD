@@ -127,7 +127,7 @@ std::pair<int, long long> ParallelScheduler::dynamicProgramming() const {
 
     auto start = std::chrono::high_resolution_clock::now();
     // Liczba zadań
-    int n = tasks.size();
+    int taskCount = tasks.size();
     // Całkowity czas wykonania wszystkich zadań
     int sum = 0;
     // Obliczenie sumy wszystkich zadań
@@ -139,59 +139,67 @@ std::pair<int, long long> ParallelScheduler::dynamicProgramming() const {
     int target = sum / 2 + 1;  // KL (szkic)
 
     // Inicjalizacja tablicy T
-    std::vector<std::vector<bool>> T(n + 1, std::vector<bool>(target, false));
+    std::vector<std::vector<bool>> T(taskCount + 1, std::vector<bool>(target, false));
 
-    // Inicjalizacja pierwszej kolumny
-    for (int j = 0; j <= n; j++) {
-        T[j][0] = true;
+    // Inicjalizacja pierwszej kolumny (czyli suma 0 możliwa zawsze – "nic nie wybieram")
+    for (int taskIndex = 0; taskIndex <= taskCount; taskIndex++) {
+        T[taskIndex][0] = true;
     }
 
     // Wypełnianie tablicy
-    for (int j = 1; j <= n; j++) {
-        int pj = tasks[j - 1].getProcessingTime();
-        for (int k = 1; k < target; k++) {
-            if (T[j - 1][k] == true || (k >= pj && T[j - 1][k - pj] == true)) {
-                T[j][k] = true;
+    for (int taskIndex = 1; taskIndex <= taskCount; taskIndex++) {
+        int currentProcessingTime = tasks[taskIndex - 1].getProcessingTime();
+
+        for (int partialSum = 1; partialSum < target; partialSum++) {
+            // Jeśli można było osiągnąć sumę partialSum BEZ tego zadania
+            // lub można było osiągnąć partialSum - currentProcessingTime i teraz to zadanie
+            // dokładamy
+            if (T[taskIndex - 1][partialSum] == true || (partialSum >= currentProcessingTime && T[taskIndex - 1][partialSum - currentProcessingTime] == true)) {
+                T[taskIndex][partialSum] = true;
             }
         }
     }
 
-    // Szukamy największej możliwej sumy k, którą da się ułożyć z wszystkich zadań (T[n][k] == true),
-    // ale nie większej niż sum / 2
-    int k = 0;
+    // Szukamy największej możliwej sumy (najbliżej sum/2), którą da się ułożyć
+    int bestSubsetSum = 0;
 
-    for (int i = target - 1; i >= 0; --i) {
-        if (T[n][i]) {
-            k = i;
+    for (int possibleSum = target - 1; possibleSum >= 0; --possibleSum) {
+        if (T[taskCount][possibleSum]) {
+            bestSubsetSum = possibleSum;
             break;
         }
     }
 
-    // BACKTRACKING
-    std::vector<int> bestMachine1, bestMachine2;
+    // BACKTRACKING – cofamy się w tablicy T, aby odzyskać konkretne zadania
+    std::vector<int> machine1TaskIndices, machine2TaskIndices;
+    int machine1TotalTime = 0, machine2TotalTime = 0;
 
-    std::vector<int> machine1, machine2;
-    int sum1 = 0, sum2 = 0;
-    // Zaczynamy od końca
-    int j = n;
+    // Zaczynamy od ostatniego wiersza (czyli wszystkich zadań)
+    int currentTaskIndex = taskCount;
+    int currentSum = bestSubsetSum;
 
     // Cofanie się w tablicy i znalezienie zadań, które dały największą sumę
-    while (j > 0) {
-        int pj = tasks[j - 1].getProcessingTime();
+    while (currentTaskIndex > 0) {
+        // Pobranie czasu wykonania zadania numer j - 1
+        int currentProcessingTime = tasks[currentTaskIndex - 1].getProcessingTime();
 
-        // Czy zadanie j-1 było użyte?
-        if (k >= pj && T[j - 1][k - pj]) {
-            machine1.push_back(j - 1);
-            sum1 += pj;
-            k -= pj;  // zmniejszamy kolumnę
+        // Sprawdzamy, czy zadanie zostało użyte do zbudowania currentSum
+        if (currentSum >= currentProcessingTime &&
+            T[currentTaskIndex - 1][currentSum - currentProcessingTime]) {
+            // Tak, to zadanie należy do maszyny 1
+            machine1TaskIndices.push_back(currentTaskIndex - 1);
+            machine1TotalTime += currentProcessingTime;
+            currentSum -= currentProcessingTime;
         } else {
-            machine2.push_back(j - 1);
-            sum2 += pj;
+            // Nie, to zadanie należy do maszyny 2
+            machine2TaskIndices.push_back(currentTaskIndex - 1);
+            machine2TotalTime += currentProcessingTime;
         }
-        j--;
+
+        currentTaskIndex--;
     }
 
-    int cmax = std::max(sum1, sum2);
+    int cmax = std::max(machine1TotalTime, machine2TotalTime);
 
     auto end = std::chrono::high_resolution_clock::now();
     long long time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
