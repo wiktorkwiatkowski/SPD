@@ -90,34 +90,35 @@ std::pair<int, long long> ParallelScheduler::bruteForce() const {
         return std::make_pair(-1, -1);  // Za duże dla brute force
     }
 
+    int n = tasks.size();
+    int bestCmax = INT_MAX;
+
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Prosta implementacja brute force dla 2 maszyn
-    int total = 0;
-    for (const auto& task : tasks) {
-        total += task.getProcessingTime();
-    }
+    int combinations = 1 << n;  // 2^n możliwych przypisań
 
-    int best = total;
-    int n = tasks.size();
-
-    for (int mask = 0; mask < (1 << n); mask++) {
+    for (int mask = 0; mask < combinations; ++mask) {
         int sum1 = 0;
-        for (int i = 0; i < n; i++) {
+        int sum2 = 0;
+
+        for (int i = 0; i < n; ++i) {
             if (mask & (1 << i)) {
                 sum1 += tasks[i].getProcessingTime();
+            } else {
+                sum2 += tasks[i].getProcessingTime();
             }
         }
-        int current = std::max(sum1, total - sum1);
-        if (current < best) {
-            best = current;
+
+        int cmax = std::max(sum1, sum2);
+        if (cmax < bestCmax) {
+            bestCmax = cmax;
         }
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    long long time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    long long time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-    return std::make_pair(best, time);
+    return std::pair{bestCmax, time};
 }
 
 std::pair<int, long long> ParallelScheduler::dynamicProgramming() const {
