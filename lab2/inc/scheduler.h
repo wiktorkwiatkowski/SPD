@@ -40,6 +40,8 @@ public:
     std::pair<int, long long> calculateLPT() const;
     std::pair<int, long long> bruteForce() const;
     std::pair<int, long long> dynamicProgramming() const;
+    std::pair<int, long long> calculatePTAS(int k) const;
+    std::pair<int, long long> calculateFPTAS(double epsilon) const;
     
     const std::vector<Task>& getTasks() const { return tasks; }
     int getMachineCount() const { return machineCount; }

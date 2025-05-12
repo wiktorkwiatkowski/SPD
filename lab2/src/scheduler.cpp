@@ -207,3 +207,110 @@ std::pair<int, long long> ParallelScheduler::dynamicProgramming() const {
 
     return std::make_pair(cmax, time);
 }
+
+std::pair<int, long long> ParallelScheduler::calculatePTAS(int k) const {
+    if (machineCount != 2) return {-1, -1}; // tylko dla 2 maszyn
+    if (k > (int)tasks.size()) k = tasks.size();
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::vector<Task> sortedTasks = tasks;
+    std::sort(sortedTasks.begin(), sortedTasks.end(), [](const Task& a, const Task& b) {
+        return a.getProcessingTime() > b.getProcessingTime();
+    });
+
+    int n = sortedTasks.size();
+    int bestCmax = INT_MAX;
+
+    // Bruteforce tylko dla pierwszych k zadań
+    int combinations = 1 << k;
+    std::vector<Task> remainingTasks(sortedTasks.begin() + k, sortedTasks.end());
+
+    for (int mask = 0; mask < combinations; ++mask) {
+        int sum1 = 0, sum2 = 0;
+        for (int i = 0; i < k; ++i) {
+            if (mask & (1 << i))
+                sum1 += sortedTasks[i].getProcessingTime();
+            else
+                sum2 += sortedTasks[i].getProcessingTime();
+        }
+
+        std::vector<int> machineLoads = {sum1, sum2};
+
+        // Dodanie pozostałych zadań najpierw dostępnej maszynie
+        for (const auto& task : remainingTasks) {
+            auto it = std::min_element(machineLoads.begin(), machineLoads.end());
+            *it += task.getProcessingTime();
+        }
+
+        bestCmax = std::min(bestCmax, std::max(machineLoads[0], machineLoads[1]));
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    long long time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    return {bestCmax, time};
+}
+
+std::pair<int, long long> ParallelScheduler::calculateFPTAS(double epsilon) const {
+    if (machineCount != 2) return {-1, -1};
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    int n = tasks.size();
+    int S = 0;
+    for (const auto& task : tasks)
+        S += task.getProcessingTime();
+
+    int k = std::max(1, (int)(epsilon * S / (2.0 * n)));
+
+    // Skalowanie czasów
+    std::vector<int> scaledProcessingTimes;
+    scaledProcessingTimes.reserve(n);
+    for (const auto& task : tasks) {
+        scaledProcessingTimes.push_back(task.getProcessingTime() / k);
+    }
+
+    // Dynamiczne programowanie na przeskalowanych danych
+    int target = std::accumulate(scaledProcessingTimes.begin(), scaledProcessingTimes.end(), 0) / 2 + 1;
+    std::vector<std::vector<bool>> dp(n + 1, std::vector<bool>(target, false));
+    for (int i = 0; i <= n; ++i) dp[i][0] = true;
+
+    for (int i = 1; i <= n; ++i) {
+        int p = scaledProcessingTimes[i - 1];
+        for (int j = 1; j < target; ++j) {
+            dp[i][j] = dp[i - 1][j] || (j >= p && dp[i - 1][j - p]);
+        }
+    }
+
+    int bestSum = 0;
+    for (int j = target - 1; j >= 0; --j) {
+        if (dp[n][j]) {
+            bestSum = j;
+            break;
+        }
+    }
+
+    // Podział zadań
+    std::vector<int> machine1, machine2;
+    int i = n, j = bestSum;
+    while (i > 0) {
+        int p = scaledProcessingTimes[i - 1];
+        if (j >= p && dp[i - 1][j - p]) {
+            machine1.push_back(i - 1);
+            j -= p;
+        } else {
+            machine2.push_back(i - 1);
+        }
+        --i;
+    }
+
+    int sum1 = 0, sum2 = 0;
+    for (int idx : machine1) sum1 += tasks[idx].getProcessingTime();
+    for (int idx : machine2) sum2 += tasks[idx].getProcessingTime();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    long long time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    return {std::max(sum1, sum2), time};
+}
