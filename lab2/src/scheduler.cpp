@@ -97,11 +97,18 @@ std::pair<int, long long> ParallelScheduler::bruteForce() const {
 
     int combinations = 1 << n;  // 2^n możliwych przypisań
 
+    // Sprawdzamy wszystkie możliwości przypisania n zadań do 2 maszyn
+    // Każda możliwość reprezentowana jest przez liczbę mask
+    // bit 1 idzie na maszynę 1 a bit 0 idzie na maszynę 2
     for (int mask = 0; mask < combinations; ++mask) {
+        // Suma zadań przypisanych do maszyny 1
         int sum1 = 0;
+        // Suma do maszyny 2
         int sum2 = 0;
 
+        // Przechodzimy przez każde zadanie i sprawdzamy gdzie ma trafić
         for (int i = 0; i < n; ++i) {
+            // Każde zadanie porównujemy z maską i patrzymy, gdzie ma trafić
             if (mask & (1 << i)) {
                 sum1 += tasks[i].getProcessingTime();
             } else {
@@ -109,6 +116,7 @@ std::pair<int, long long> ParallelScheduler::bruteForce() const {
             }
         }
 
+        // Czas najbardziej obciążonej maszyny
         int cmax = std::max(sum1, sum2);
         if (cmax < bestCmax) {
             bestCmax = cmax;
@@ -155,13 +163,16 @@ std::pair<int, long long> ParallelScheduler::dynamicProgramming() const {
             // Jeśli można było osiągnąć sumę partialSum BEZ tego zadania
             // lub można było osiągnąć partialSum - currentProcessingTime i teraz to zadanie
             // dokładamy
-            if (T[taskIndex - 1][partialSum] == true || (partialSum >= currentProcessingTime && T[taskIndex - 1][partialSum - currentProcessingTime] == true)) {
+            if (T[taskIndex - 1][partialSum] == true ||
+                (partialSum >= currentProcessingTime &&
+                 T[taskIndex - 1][partialSum - currentProcessingTime] == true)) {
                 T[taskIndex][partialSum] = true;
             }
         }
     }
 
     // Szukamy największej możliwej sumy (najbliżej sum/2), którą da się ułożyć
+    // z tabeli T
     int bestSubsetSum = 0;
 
     for (int possibleSum = target - 1; possibleSum >= 0; --possibleSum) {
@@ -187,12 +198,12 @@ std::pair<int, long long> ParallelScheduler::dynamicProgramming() const {
         // Sprawdzamy, czy zadanie zostało użyte do zbudowania currentSum
         if (currentSum >= currentProcessingTime &&
             T[currentTaskIndex - 1][currentSum - currentProcessingTime]) {
-            // Tak, to zadanie należy do maszyny 1
+            // Jeśli tak, to zadanie należy do maszyny 1
             machine1TaskIndices.push_back(currentTaskIndex - 1);
             machine1TotalTime += currentProcessingTime;
             currentSum -= currentProcessingTime;
         } else {
-            // Nie, to zadanie należy do maszyny 2
+            // Jeśli nie, to zadanie należy do maszyny 2
             machine2TaskIndices.push_back(currentTaskIndex - 1);
             machine2TotalTime += currentProcessingTime;
         }
@@ -209,7 +220,7 @@ std::pair<int, long long> ParallelScheduler::dynamicProgramming() const {
 }
 
 std::pair<int, long long> ParallelScheduler::calculatePTAS(int k) const {
-    if (machineCount != 2) return {-1, -1}; // tylko dla 2 maszyn
+    if (machineCount != 2) return {-1, -1};  // tylko dla 2 maszyn
     if (k > (int)tasks.size()) k = tasks.size();
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -219,7 +230,6 @@ std::pair<int, long long> ParallelScheduler::calculatePTAS(int k) const {
         return a.getProcessingTime() > b.getProcessingTime();
     });
 
-    int n = sortedTasks.size();
     int bestCmax = INT_MAX;
 
     // Bruteforce tylko dla pierwszych k zadań
@@ -257,60 +267,86 @@ std::pair<int, long long> ParallelScheduler::calculateFPTAS(double epsilon) cons
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    int n = tasks.size();
+    int taskCount = tasks.size();
+    // Suma zadań
     int S = 0;
-    for (const auto& task : tasks)
-        S += task.getProcessingTime();
+    // Licznie sumy wszystkich zadań
+    for (const auto& task : tasks) S += task.getProcessingTime();
 
-    int k = std::max(1, (int)(epsilon * S / (2.0 * n)));
+    // Obliczenie współczynnika k - liczba całkowita większa od 1
+    // Im k większe tym mniejsze liczby, czyli szybsze działanie PD
+    int k = std::max(1, (int)(epsilon * S / (2.0 * taskCount)));
 
-    // Skalowanie czasów
+    // Skalowanie czasów, czyli nasze zadania przez wartość współczynnika k
     std::vector<int> scaledProcessingTimes;
-    scaledProcessingTimes.reserve(n);
+    scaledProcessingTimes.reserve(taskCount);
     for (const auto& task : tasks) {
         scaledProcessingTimes.push_back(task.getProcessingTime() / k);
     }
 
-    // Dynamiczne programowanie na przeskalowanych danych
-    int target = std::accumulate(scaledProcessingTimes.begin(), scaledProcessingTimes.end(), 0) / 2 + 1;
-    std::vector<std::vector<bool>> dp(n + 1, std::vector<bool>(target, false));
-    for (int i = 0; i <= n; ++i) dp[i][0] = true;
+    // Maksymalna suma zadań na jednej maszynie (przeskalowana)
+    int target =
+        std::accumulate(scaledProcessingTimes.begin(), scaledProcessingTimes.end(), 0) / 2 + 1;
 
-    for (int i = 1; i <= n; ++i) {
-        int p = scaledProcessingTimes[i - 1];
-        for (int j = 1; j < target; ++j) {
-            dp[i][j] = dp[i - 1][j] || (j >= p && dp[i - 1][j - p]);
+    // Inicjalizacja tablicy T
+    std::vector<std::vector<bool>> T(taskCount + 1, std::vector<bool>(target, false));
+
+    // Inicjalizacja pierwszej kolumny
+    for (int taskIndex = 0; taskIndex <= taskCount; taskIndex++) {
+        T[taskIndex][0] = true;
+    }
+
+    // Wypełnianie tablicy dynamicznego programowania
+    for (int taskIndex = 1; taskIndex <= taskCount; taskIndex++) {
+        int currentProcessingTime = scaledProcessingTimes[taskIndex - 1];
+
+        for (int partialSum = 1; partialSum < target; partialSum++) {
+            if (T[taskIndex - 1][partialSum] ||
+                (partialSum >= currentProcessingTime &&
+                 T[taskIndex - 1][partialSum - currentProcessingTime])) {
+                T[taskIndex][partialSum] = true;
+            }
         }
     }
 
-    int bestSum = 0;
-    for (int j = target - 1; j >= 0; --j) {
-        if (dp[n][j]) {
-            bestSum = j;
+    // Szukamy największej możliwej sumy (najbliżej sumy/2)
+    int bestSubsetSum = 0;
+    for (int possibleSum = target - 1; possibleSum >= 0; --possibleSum) {
+        if (T[taskCount][possibleSum]) {
+            bestSubsetSum = possibleSum;
             break;
         }
     }
 
-    // Podział zadań
-    std::vector<int> machine1, machine2;
-    int i = n, j = bestSum;
-    while (i > 0) {
-        int p = scaledProcessingTimes[i - 1];
-        if (j >= p && dp[i - 1][j - p]) {
-            machine1.push_back(i - 1);
-            j -= p;
+    // Backtracking – odzyskanie przypisania zadań
+    std::vector<int> machine1TaskIndices, machine2TaskIndices;
+    int machine1TotalTime = 0, machine2TotalTime = 0;
+
+    int currentTaskIndex = taskCount;
+    int currentSum = bestSubsetSum;
+
+    while (currentTaskIndex > 0) {
+        int currentProcessingTime = scaledProcessingTimes[currentTaskIndex - 1];
+
+        if (currentSum >= currentProcessingTime &&
+            T[currentTaskIndex - 1][currentSum - currentProcessingTime]) {
+            machine1TaskIndices.push_back(currentTaskIndex - 1);
+            machine1TotalTime +=
+                tasks[currentTaskIndex - 1].getProcessingTime();  // oryginalny czas
+            currentSum -= currentProcessingTime;
         } else {
-            machine2.push_back(i - 1);
+            machine2TaskIndices.push_back(currentTaskIndex - 1);
+            machine2TotalTime +=
+                tasks[currentTaskIndex - 1].getProcessingTime();  // oryginalny czas
         }
-        --i;
+
+        currentTaskIndex--;
     }
 
-    int sum1 = 0, sum2 = 0;
-    for (int idx : machine1) sum1 += tasks[idx].getProcessingTime();
-    for (int idx : machine2) sum2 += tasks[idx].getProcessingTime();
+    int cmax = std::max(machine1TotalTime, machine2TotalTime);
 
     auto end = std::chrono::high_resolution_clock::now();
     long long time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-    return {std::max(sum1, sum2), time};
+    return std::make_pair(cmax, time);
 }
