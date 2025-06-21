@@ -13,12 +13,12 @@ namespace fs = std::filesystem;
 int main() {
     // JAK CHCESZ NOWE INSTANCJE TO ODKOMENTUJ
 
-    /*
-    Generator generator;
-    std::vector<int> machine_counts = {2, 3};
-    std::vector<int> job_counts = {5, 10, 15, 20};
-    generator.generateMultipleInstances(machine_counts, job_counts);
-    */
+    
+    // Generator generator;
+    // std::vector<int> machine_counts = {2, 3};
+    // std::vector<int> job_counts = {5, 10, 15, 20};
+    // generator.generateMultipleInstances(machine_counts, job_counts);
+    
 
     std::vector<std::pair<std::string, FlowShopInstance>> all_instances;
     std::string folder_path = "../instances/";
@@ -52,14 +52,14 @@ int main() {
         std::cout << "Wczytano: " << name << "\n";
     }
 
-    if (!all_instances.empty()) {
-        const auto& [name, inst] = all_instances[0];
+    // if (!all_instances.empty()) {
+    //     const auto& [name, inst] = all_instances[0];
 
-        auto [cmax, time] = Scheduler::bruteForce(inst);
-        std::cout << "\n[Brute-force] Instancja: " << name << ", Cmax: " << cmax
-                  << ", Czas: " << time << " μs\n";
-    }
+    //     auto [cmax, time] = Scheduler::bruteForce(inst);
+    //     std::cout << "\n[Brute-force] Instancja: " << name << ", Cmax: " << cmax
+    //               << ", Czas: " << time << " μs\n";
+    // }
 
     Tester tester;
-    tester.runBruteForceTest(all_instances);
+    tester.runBruteForceAndNEH(all_instances);
 }
