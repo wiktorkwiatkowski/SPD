@@ -165,8 +165,8 @@ std::pair<int, long long> Scheduler::calculateFNEH(const FlowShopInstance& insta
     int n = instance.num_jobs;
     int m = instance.num_machines;
 
-    // Oblicz sumy czasów przetwarzania
-    std::vector<std::pair<int, int>> job_times;
+    // Oblicz sumy czasów dla każdego zadania
+    std::vector<std::pair<int, int>> job_times;  // {suma_czasów, id_zadania}
     for (int i = 0; i < n; ++i) {
         int sum = 0;
         for (int j = 0; j < m; ++j) {
@@ -174,51 +174,85 @@ std::pair<int, long long> Scheduler::calculateFNEH(const FlowShopInstance& insta
         }
         job_times.emplace_back(sum, i);
     }
-
+    // Sortowanie zadań malejąco względem sumy czasów
     std::sort(job_times.begin(), job_times.end(), std::greater<>());
 
-    std::vector<int> current_order;
+    // Permutacja, na której algorytm będzie pracował i dodawał w każdym kroku nowe zadanie
+    std::vector<int> sequence;
+    
+    // Macierze do buforowania czasów zakończenia:
+    // F[i][j] - czas zakończenia zadania i na maszynie j (licząc od początku sekwencji)
+    // B[i][j] - czas zakończenia zadania i na maszynie j (licząc od końca sekwencji)
+    std::vector<std::vector<int>> F(n + 1, std::vector<int>(m, 0));
+    std::vector<std::vector<int>> B(n + 1, std::vector<int>(m, 0));
 
+    // Pętla po wszystkich zadaniach
     for (int step = 0; step < n; ++step) {
-        int job_id = job_times[step].second;
+        int job = job_times[step].second;
         int best_cmax = INT_MAX;
-        std::vector<int> best_order;
+        std::vector<int> best_seq;
+        int size = sequence.size();
 
-        for (size_t pos = 0; pos <= current_order.size(); ++pos) {
-            std::vector<int> candidate = current_order;
-            candidate.insert(candidate.begin() + pos, job_id);
-
-            // Inkrementalne liczenie Cmax:
-            int cmax = 0;
-            std::vector<int> machine_times(m, 0);
-
-            for (int i = 0; i < (int)candidate.size(); ++i) {
-                int job = candidate[i];
-                for (int j = 0; j < m; ++j) {
-                    if (i == 0 && j == 0) {
-                        machine_times[j] = instance.processing_times[job][j];
-                    } else if (j == 0) {
-                        machine_times[j] = machine_times[j] + instance.processing_times[job][j];
-                    } else {
-                        machine_times[j] = std::max(machine_times[j], machine_times[j - 1]) +
-                                           instance.processing_times[job][j];
-                    }
-                }
-            }
-
-            cmax = machine_times[m - 1];
-
-            if (cmax < best_cmax) {
-                best_cmax = cmax;
-                best_order = std::move(candidate);
+        // Oblicz przód F
+        for (int i = 0; i < size; ++i) {
+            int task = sequence[i];
+            for (int j = 0; j < m; ++j) {
+                int t = instance.processing_times[task][j];
+                if (i == 0 && j == 0)
+                    F[i][j] = t;
+                else if (i == 0)
+                    F[i][j] = F[i][j - 1] + t;
+                else if (j == 0)
+                    F[i][j] = F[i - 1][j] + t;
+                else
+                    F[i][j] = std::max(F[i - 1][j], F[i][j - 1]) + t;
             }
         }
 
-        current_order = std::move(best_order);
+        // Oblicz tył B
+        for (int i = size - 1; i >= 0; --i) {
+            int task = sequence[i];
+            for (int j = m - 1; j >= 0; --j) {
+                int t = instance.processing_times[task][j];
+                if (i == size - 1 && j == m - 1)
+                    B[i][j] = t;
+                else if (i == size - 1)
+                    B[i][j] = B[i][j + 1] + t;
+                else if (j == m - 1)
+                    B[i][j] = B[i + 1][j] + t;
+                else
+                    B[i][j] = std::max(B[i + 1][j], B[i][j + 1]) + t;
+            }
+        }
+
+        // Sprawdź każde możliwe wstawienie job
+        for (int pos = 0; pos <= size; ++pos) {
+            std::vector<int> C(m, 0);
+            for (int j = 0; j < m; ++j) {
+                int prev = (pos > 0) ? F[pos - 1][j] : 0;
+                int t = instance.processing_times[job][j];
+                if (j == 0)
+                    C[j] = prev + t;
+                else
+                    C[j] = std::max(prev, C[j - 1]) + t;
+            }
+
+            int cmax = C[m - 1];
+            if (pos < size)
+                cmax += B[pos][m - 1];
+
+            if (cmax < best_cmax) {
+                best_cmax = cmax;
+                best_seq = sequence;
+                best_seq.insert(best_seq.begin() + pos, job);
+            }
+        }
+
+        sequence = std::move(best_seq);
     }
 
     auto end = high_resolution_clock::now();
     long long time_us = duration_cast<microseconds>(end - start).count();
 
-    return {calculateCmax(instance, current_order), time_us};
+    return {calculateCmax(instance, sequence), time_us};
 }
