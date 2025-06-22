@@ -42,24 +42,16 @@ void Tester::saveToCSV(const std::string& filename,
 
 void Tester::runBruteForceAndNEH(
     const std::vector<std::pair<std::string, FlowShopInstance>>& instances) {
-    
     std::vector<std::vector<std::string>> results;
 
     // Nagłówek
-    results.push_back({
-        "Nazwa instancji", "Liczba zadań", "Liczba maszyn",
-        "NEH (Cmax)", "Czas NEH [μs]",
-        "FNEH (Cmax)", "Czas FNEH [μs]",
-        "Johnson (Cmax)", "Czas Johnson [μs]",
-        "Brute Force (Cmax)", "Czas Brute Force [μs]"
-    });
+    results.push_back({"Nazwa instancji", "Liczba zadań", "Liczba maszyn", "NEH (Cmax)",
+                       "Czas NEH [μs]", "FNEH (Cmax)", "Czas FNEH [μs]", "Johnson (Cmax)",
+                       "Czas Johnson [μs]", "Brute Force (Cmax)", "Czas Brute Force [μs]"});
 
     for (const auto& [name, inst] : instances) {
-        std::vector<std::string> row = {
-            name,
-            std::to_string(inst.num_jobs),
-            std::to_string(inst.num_machines)
-        };
+        std::vector<std::string> row = {name, std::to_string(inst.num_jobs),
+                                        std::to_string(inst.num_machines)};
 
         // --- Algorytmy ---
         auto neh = scheduler.calculateNEH(inst);
@@ -80,6 +72,8 @@ void Tester::runBruteForceAndNEH(
 
         // --- NEH ---
         auto nehStr = formatResult(neh.first, bestCmax, neh.second);
+        std::cout << "Plik: " << name << ", brute: " << brute.first << ", neh: " << neh.first
+                  << ", fneh: " << fneh.first << ", johonson: "<<johnson.first<< std::endl;
         auto pos = nehStr.find(',');
         row.push_back(nehStr.substr(0, pos));
         row.push_back(nehStr.substr(pos + 1));
@@ -118,4 +112,3 @@ void Tester::runBruteForceAndNEH(
     saveToCSV("tabela_brute_neh_fneh_johnson.csv", results);
     std::cout << "✓ Wyniki zapisane do tabela_brute_neh_fneh_johnson.csv\n";
 }
-
