@@ -188,12 +188,13 @@ std::pair<int, long long> Scheduler::calculateFNEH(const FlowShopInstance& insta
 
     // Pętla po wszystkich zadaniach
     for (int step = 0; step < n; ++step) {
+        // Bieżące ID zadania
         int job = job_times[step].second;
         int best_cmax = INT_MAX;
         std::vector<int> best_seq;
         int size = sequence.size();
 
-        // Oblicz przód F
+        // Oblicz przód F, czasy zakończenia do danego punktu
         for (int i = 0; i < size; ++i) {
             int task = sequence[i];
             for (int j = 0; j < m; ++j) {
@@ -209,7 +210,7 @@ std::pair<int, long long> Scheduler::calculateFNEH(const FlowShopInstance& insta
             }
         }
 
-        // Oblicz tył B
+        // Oblicz tył B, czas potrzebny od danego punktu do końca
         for (int i = size - 1; i >= 0; --i) {
             int task = sequence[i];
             for (int j = m - 1; j >= 0; --j) {
@@ -227,8 +228,11 @@ std::pair<int, long long> Scheduler::calculateFNEH(const FlowShopInstance& insta
 
         // Sprawdź każde możliwe wstawienie job
         for (int pos = 0; pos <= size; ++pos) {
+            // Pomocniczy wektór reprezentujący czasy zakonczenia nowego zadania job
             std::vector<int> C(m, 0);
+            // Sprawdzenie ile zajmą czasy przed job
             for (int j = 0; j < m; ++j) {
+                // Jeśli job jest jako pierwsze to bieżemy 0, jeśli nie to z tablicy F
                 int prev = (pos > 0) ? F[pos - 1][j] : 0;
                 int t = instance.processing_times[job][j];
                 if (j == 0)
@@ -238,9 +242,11 @@ std::pair<int, long long> Scheduler::calculateFNEH(const FlowShopInstance& insta
             }
 
             int cmax = C[m - 1];
+            // Jeśli job nie wstawiamy na koniec, dodajmy tez szacowany czas zadań ktore nastopią po job
             if (pos < size)
                 cmax += B[pos][m - 1];
-
+            
+            // Sprawdzenie czy to najlpesza pozycja 
             if (cmax < best_cmax) {
                 best_cmax = cmax;
                 best_seq = sequence;
